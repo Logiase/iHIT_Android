@@ -1,0 +1,60 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.MaterialComponents.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:screenOrientation">portrait</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowBackground">@color/white</item>
+    </style>
+
+    <style name="AppTheme.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Dark">
+        <item name="colorControlNormal">@android:color/black</item>
+        <item name="colorButtonNormal">@android:color/black</item>
+    </style>
+
+
+    <style name="normalTxt">
+        <item name="android:textColor">@color/titleTxt</item>
+        <item name="android:textSize">@dimen/sp16</item>
+    </style>
+
+    <style name="blackTxt">
+        <item name="android:textColor">@color/black</item>
+        <item name="android:textSize">@dimen/sp16</item>
+    </style>
+
+    <style name="smallTxt">
+        <item name="android:textColor">@color/titleTxt</item>
+        <item name="android:textSize">@dimen/sp14</item>
+    </style>
+
+
+    <declare-styleable name="CoolIndicator">
+        <attr name="wrapShiftDrawable" format="boolean"/>
+        <attr name="shiftDuration" format="reference"/>
+        <attr name="shiftInterpolator" format="reference"/>
+    </declare-styleable>
+
+    <style name="BottomSheetDialog" parent="Theme.Design.Light.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/bottomSheetStyleWrapper</item>
+    </style>
+
+    <style name="bottomSheetStyleWrapper" parent="Widget.Design.BottomSheet.Modal">
+        <item name="behavior_peekHeight">500dp</item>
+    </style>
+
+</resources>

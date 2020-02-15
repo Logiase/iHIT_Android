@@ -8,15 +8,10 @@ import java.util.regex.Pattern
 
 object SubjectRepertory {
 
-    const val CAPTCHA_ERROR = 633
-    const val ACCOUNT_ERROR = 453
-    const val LOGIN_SUCCESS = 534
-    const val LOGIN_ERROR = 664
-
     private val TAG = SubjectRepertory::class.java.name
 
     val cookieStore: MutableList<Cookie> = ArrayList()
-    val httpClient: OkHttpClient
+    private val httpClient: OkHttpClient
         get() {
             val client: OkHttpClient
             val spec = ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
@@ -34,15 +29,15 @@ object SubjectRepertory {
                         for (cookie in cookies) {
                             if (cookie.name.contains("DSID")) {
                                 Log.d(
-                                    SubjectRepertory.TAG,
+                                    TAG,
                                     "saveFromResponse: cookie size=" + cookies.size
                                 )
                                 Log.d(
-                                    SubjectRepertory.TAG,
+                                    TAG,
                                     "saveFromResponse: name=" + cookie.name + ", value=" + cookie.value
                                 )
-                                SubjectRepertory.cookieStore.clear()
-                                SubjectRepertory.cookieStore.addAll(cookies)
+                                cookieStore.clear()
+                                cookieStore.addAll(cookies)
                             }
                         }
                     }
@@ -57,11 +52,11 @@ object SubjectRepertory {
             return client
         }
 
-    fun vpnLogin(usrID: String, passwd: String): Int {
+    fun vpnLogin(usrID: String, password: String): Int {
         val formBody = FormBody.Builder()
             .add("tz_offset", "540")
             .add("username", usrID)
-            .add("password", passwd)
+            .add("password", password)
             .add("realm", "学生")
             .add("btnSubmit", "登录")
             .build()
@@ -71,21 +66,25 @@ object SubjectRepertory {
             .build()
         val response = httpClient.newCall(request).execute()
 
-        if (response.priorResponse?.headers("location")!!.contains("p=user")) {
-            Log.d(TAG, "vpnLogin: 已登录")
-            return vpnReLogin(response.body!!.string())
-        } else if (response.priorResponse?.headers("location")!!.contains("p=f")) {
-            Log.d(TAG, "vpnLogin: 账号错误")
-            return ACCOUNT_ERROR
-        } else if (response.priorResponse?.headers("location")!!.contains("index")) {
-            Log.d(TAG, "vpnLogin: 登陆成功")
-            return LOGIN_SUCCESS
+        return when {
+            response.priorResponse?.headers("location")!!.contains("p=user") -> {
+                Log.d(TAG, "vpnLogin: 已登录")
+                vpnReLogin(response.body!!.string())
+            }
+            response.priorResponse?.headers("location")!!.contains("p=f") -> {
+                Log.d(TAG, "vpnLogin: 账号错误")
+                SubjectConstant.ACCOUNT_ERROR
+            }
+            response.priorResponse?.headers("location")!!.contains("index") -> {
+                Log.d(TAG, "vpnLogin: 登陆成功")
+                SubjectConstant.LOGIN_SUCCESS
+            }
+            else -> SubjectConstant.LOGIN_ERROR
         }
 
-        return LOGIN_ERROR
     }
 
-    fun vpnReLogin(html: String): Int {
+    private fun vpnReLogin(html: String): Int {
         val url = "https://vpn.hit.edu.cn/dana-na/auth/url_default/login.cgi"
         val regex =
             "<input id=\"DSIDFormDataStr\" type=\"hidden\" name=\"FormDataStr\" value=\"([^ ]+)\">" // 判断是否已经登录的正则
@@ -97,22 +96,22 @@ object SubjectRepertory {
             Log.d(TAG, "vpn_relogin: FormDataStr= $reloginToken")
         }
         Log.d(TAG, "vpn_relogin: ")
-        val relogin_data = FormBody.Builder()
+        val reLoginData = FormBody.Builder()
             .add("btnContinue", "继续会话")
             .add("FormDataStr", reloginToken)
             .build()
-        val client = HttpUtil.httpClient
+        val client = httpClient
         val request = Request.Builder()
             .url(url)
-            .post(relogin_data)
+            .post(reLoginData)
             .build()
         val call = client.newCall(request)
         call.execute()
-        return LOGIN_SUCCESS
+        return SubjectConstant.LOGIN_SUCCESS
     }
 
-    fun setCookie() {
-        val client = HttpUtil.httpClient
+    private fun setCookie() {
+        val client = httpClient
         val request = Request.Builder()
             .get()
             .url("https://vpn.hit.edu.cn/,DanaInfo=jwts.hit.edu.cn,SSO=U+")
@@ -151,18 +150,18 @@ object SubjectRepertory {
         val priorResponse = httpClient.newCall(request).execute().priorResponse
         if (priorResponse != null && priorResponse.header("location") == "https://vpn.hit.edu.cn/,DanaInfo=jwts.hit.edu.cn+") {
             Log.d(TAG, "jwtsLogin: 验证码错误")
-            return CAPTCHA_ERROR
+            return SubjectConstant.CAPTCHA_ERROR
         }
 
-        return LOGIN_SUCCESS
+        return SubjectConstant.LOGIN_SUCCESS
     }
 
     fun vpnKbPost(xnxq: String): String {
-        val kb_data = FormBody.Builder()
+        val kbData = FormBody.Builder()
             .add("xnxq", xnxq)
             .build()
         val request = Request.Builder()
-            .post(kb_data)
+            .post(kbData)
             .url("https://vpn.hit.edu.cn/kbcx/,DanaInfo=jwts.hit.edu.cn+queryGrkb")
             .build()
 

@@ -1,7 +1,5 @@
 package top.logiase.ihit.bridge.callback
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
 class SharedViewModel : ViewModel() {

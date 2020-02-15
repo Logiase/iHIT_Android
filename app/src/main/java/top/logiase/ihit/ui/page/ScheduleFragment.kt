@@ -46,7 +46,7 @@ class ScheduleFragment : BaseFragment() {
         initTimetableView()
     }
 
-    fun initTimetableView() {
+    private fun initTimetableView() {
 
         weekView.curWeek(sharedViewModel!!.curWeek)
             .callback { week: Int ->
@@ -60,10 +60,10 @@ class ScheduleFragment : BaseFragment() {
 
         timetableView.curWeek(sharedViewModel!!.curWeek)
             .curTerm("term")
-            .callback { v: View?, scheduleList: List<Schedule>? ->
+            .callback { _: View?, scheduleList: List<Schedule>? ->
                 ScheduleProxy().display(scheduleList)
             }
-            .callback { v: View?, day: Int, start: Int ->
+            .callback { _: View?, day: Int, start: Int ->
                 Toast.makeText(context, "长按:周" + day + ",第" + start + "节", Toast.LENGTH_SHORT)
                     .show()
             }
@@ -97,7 +97,7 @@ class ScheduleFragment : BaseFragment() {
             }
             builder.setPositiveButton(
                 "设置为当前周"
-            ) { dialog, which ->
+            ) { _, _ ->
                 if (mScheduleViewModel!!.target != -1) {
                     weekView.curWeek(mScheduleViewModel!!.target + 1).updateView()
                     timetableView.changeWeekForce(mScheduleViewModel!!.target + 1)

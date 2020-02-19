@@ -1,4 +1,4 @@
-package top.logiase.ihit.data.db
+package top.logiase.ihit.db.data
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
@@ -6,6 +6,10 @@ import androidx.room.PrimaryKey
 import com.zhuangfei.timetable.model.Schedule
 import com.zhuangfei.timetable.model.ScheduleEnable
 
+
+/*
+ * 自动爬取课程表
+ */
 @Entity(tableName = "subject")
 data class Subject(
     @ColumnInfo(name = "name") val name: String,

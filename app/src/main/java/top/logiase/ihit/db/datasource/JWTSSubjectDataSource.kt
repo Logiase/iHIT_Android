@@ -1,4 +1,4 @@
-package top.logiase.ihit.data.schedule
+package top.logiase.ihit.db.datasource
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -6,56 +6,44 @@ import android.util.Log
 import okhttp3.*
 import java.util.regex.Pattern
 
-object SubjectRepertory {
+/**
+ * @author Logiase
+ */
+object JWTSSubjectDataSource {
 
-    private val TAG = SubjectRepertory::class.java.name
+    private val TAG = this::class.java.name
 
-    val cookieStore: MutableList<Cookie> = ArrayList()
-    private val httpClient: OkHttpClient
-        get() {
-            val client: OkHttpClient
-            val spec = ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
-                .tlsVersions(TlsVersion.TLS_1_2)
-                .cipherSuites(
-                    CipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-                    CipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-                    CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
-                )
-                .build()
+    const val LOGIN_SUCCESS = 4001
+    const val ACCOUNT_ERROR = 4002
+    const val CAPTCHA_ERROR = 4003
+    const val LOGIN_ERROR = 4004
 
-            client = OkHttpClient.Builder()
-                .cookieJar(object : CookieJar {
-                    override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
-                        for (cookie in cookies) {
-                            if (cookie.name.contains("DSID")) {
-                                Log.d(
-                                    TAG,
-                                    "saveFromResponse: cookie size=" + cookies.size
-                                )
-                                Log.d(
-                                    TAG,
-                                    "saveFromResponse: name=" + cookie.name + ", value=" + cookie.value
-                                )
-                                cookieStore.clear()
-                                cookieStore.addAll(cookies)
-                            }
-                        }
-                    }
+    private val cookieStore = HashMap<String, List<Cookie>>()
 
-                    override fun loadForRequest(url: HttpUrl): List<Cookie> {
-                        return cookieStore
-                    }
-                })
-                .connectionSpecs(listOf(spec))
-                .build()
+    private val httpClient: OkHttpClient by lazy {
+        val spec = ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
+            .tlsVersions(TlsVersion.TLS_1_2)
+            .build()
 
-            return client
-        }
+        return@lazy OkHttpClient.Builder()
+            .cookieJar(object : CookieJar {
+                override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
+                    cookieStore[url.host] = cookies
+                }
 
-    fun vpnLogin(usrID: String, password: String): Int {
-        val formBody = FormBody.Builder()
+                override fun loadForRequest(url: HttpUrl): List<Cookie> {
+                    return cookieStore[url.host] ?: emptyList()
+                }
+
+            })
+            .connectionSpecs(listOf(spec))
+            .build()
+    }
+
+    private fun vpnLogin(userID: String, password: String): Int {
+        val formBody: FormBody = FormBody.Builder()
             .add("tz_offset", "540")
-            .add("username", usrID)
+            .add("username", userID)
             .add("password", password)
             .add("realm", "学生")
             .add("btnSubmit", "登录")
@@ -73,15 +61,14 @@ object SubjectRepertory {
             }
             response.priorResponse?.headers("location")!!.contains("p=f") -> {
                 Log.d(TAG, "vpnLogin: 账号错误")
-                SubjectConstant.ACCOUNT_ERROR
+                ACCOUNT_ERROR
             }
             response.priorResponse?.headers("location")!!.contains("index") -> {
                 Log.d(TAG, "vpnLogin: 登陆成功")
-                SubjectConstant.LOGIN_SUCCESS
+                LOGIN_SUCCESS
             }
-            else -> SubjectConstant.LOGIN_ERROR
+            else -> LOGIN_ERROR
         }
-
     }
 
     private fun vpnReLogin(html: String): Int {
@@ -89,8 +76,7 @@ object SubjectRepertory {
         val regex =
             "<input id=\"DSIDFormDataStr\" type=\"hidden\" name=\"FormDataStr\" value=\"([^ ]+)\">" // 判断是否已经登录的正则
         var reloginToken = ""
-        val p = Pattern.compile(regex)
-        val m = p.matcher(html)
+        val m = Pattern.compile(regex).matcher(html)
         if (m.find()) {
             reloginToken = m.group(1)!!
             Log.d(TAG, "vpn_relogin: FormDataStr= $reloginToken")
@@ -107,40 +93,42 @@ object SubjectRepertory {
             .build()
         val call = client.newCall(request)
         call.execute()
-        return SubjectConstant.LOGIN_SUCCESS
+        return LOGIN_SUCCESS
     }
 
     private fun setCookie() {
-        val client = httpClient
         val request = Request.Builder()
             .get()
             .url("https://vpn.hit.edu.cn/,DanaInfo=jwts.hit.edu.cn,SSO=U+")
             .build()
-        val call = client.newCall(request)
+        val call = httpClient.newCall(request)
         call.execute()
     }
 
-    fun getCaptcha(): Bitmap? {
+    private fun getCaptchaImage(): Bitmap? {
         setCookie()
+
+        val url = "https://vpn.hit.edu.cn/,DanaInfo=jwts.hit.edu.cn+captchaImage"
+
         val request = Request.Builder()
             .get()
-            .url("https://vpn.hit.edu.cn/,DanaInfo=jwts.hit.edu.cn+captchaImage")
+            .url(url)
             .build()
-        val response = httpClient.newCall(request).execute()
-        if (response.isSuccessful) {
-            val inputStream = response.body!!.byteStream()
-            return BitmapFactory.decodeStream(inputStream)
-        } else {
-            Log.d(TAG, "getCaptcha: Failed")
-        }
 
-        return null
+        val response = httpClient.newCall(request).execute()
+        return if (response.isSuccessful) {
+            val inStream = response.body?.byteStream()
+            BitmapFactory.decodeStream(inStream)
+        } else {
+            Log.d(TAG, "jwts:获取验证码失败")
+            null
+        }
     }
 
-    fun jwtsLogin(usrID: String, passwd: String, captcha: String): Int {
+    private fun jwtsLogin(userID: String, password: String, captcha: String): Int {
         val formBody = FormBody.Builder()
-            .add("usercode", usrID)
-            .add("password", passwd)
+            .add("usercode", userID)
+            .add("password", password)
             .add("code", captcha)
             .build()
         val request = Request.Builder()
@@ -150,13 +138,13 @@ object SubjectRepertory {
         val priorResponse = httpClient.newCall(request).execute().priorResponse
         if (priorResponse != null && priorResponse.header("location") == "https://vpn.hit.edu.cn/,DanaInfo=jwts.hit.edu.cn+") {
             Log.d(TAG, "jwtsLogin: 验证码错误")
-            return SubjectConstant.CAPTCHA_ERROR
+            return CAPTCHA_ERROR
         }
 
-        return SubjectConstant.LOGIN_SUCCESS
+        return LOGIN_SUCCESS
     }
 
-    fun vpnKbPost(xnxq: String): String {
+    private fun vpnKbPost(xnxq: String): String {
         val kbData = FormBody.Builder()
             .add("xnxq", xnxq)
             .build()

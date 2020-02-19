@@ -3,6 +3,7 @@ package top.logiase.ihit.db.data
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.Query
 import com.zhuangfei.timetable.model.Schedule
 import com.zhuangfei.timetable.model.ScheduleEnable
 
@@ -12,19 +13,36 @@ import com.zhuangfei.timetable.model.ScheduleEnable
  */
 @Entity(tableName = "subject")
 data class Subject(
-    @ColumnInfo(name = "name") val name: String,
-    @ColumnInfo(name = "room") val room: String,
-    @ColumnInfo(name = "term") val term: String,
-    @ColumnInfo(name = "teacher") val teacher: String,
-    @ColumnInfo(name = "week_list") val weekList: List<Int>,
-    @ColumnInfo(name = "start") val start: Int,
-    @ColumnInfo(name = "step") val step: Int,
-    @ColumnInfo(name = "day") val day: Int
+    @ColumnInfo(name = "name") var name: String,
+    @ColumnInfo(name = "room") var room: String,
+    @ColumnInfo(name = "teacher") var teacher: String?,
+    @ColumnInfo(name = "week_list") var weekList: List<Int>?,
+    @ColumnInfo(name = "start") var start: Int,
+    @ColumnInfo(name = "step") var step: Int,
+    @ColumnInfo(name = "day") var day: Int
 ) : ScheduleEnable {
+
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
     var id: Long = 0
+
+    @ColumnInfo(name = "xnxq")
+    var xnxq: String? = null
+
+    @ColumnInfo(name = "userId")
+    var userID: String? = null
+
+    @ColumnInfo(name = "info")
+    var info: String? = null
+
+    @ColumnInfo(name = "type")
+    var type: String? = null
+
+    @ColumnInfo(name = "term")
+    var term: String? = null
+
     var url: String? = null
+
 
     override fun getSchedule(): Schedule {
         val schedule = Schedule()

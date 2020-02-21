@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.ViewModelProvider
+import com.zhuangfei.timetable.listener.IWeekView
 import com.zhuangfei.timetable.model.Schedule
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_schedule.*
@@ -21,7 +22,7 @@ import top.logiase.ihit.ui.base.BaseFragment
 class ScheduleFragment : BaseFragment() {
 
     private var mBinding: FragmentScheduleBinding? = null
-    private var mScheduleViewModel: ScheduleViewModel? = null
+    private lateinit var mScheduleViewModel: ScheduleViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,11 +31,7 @@ class ScheduleFragment : BaseFragment() {
         )
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view: View = inflater.inflate(R.layout.fragment_schedule, container, false)
         mBinding = FragmentScheduleBinding.bind(view)
         mBinding?.click = ClickProxy()
@@ -52,14 +49,16 @@ class ScheduleFragment : BaseFragment() {
             .callback { week: Int ->
                 ScheduleProxy().onWeekItemClicked(week)
             }
-            .callback { ->
-                ScheduleProxy().onWeekLeftClicked()
-            }
+            .callback(
+                IWeekView.OnWeekLeftClickedListener {
+                    ScheduleProxy().onWeekLeftClicked()
+                }
+            )
             .isShow(false)
             .showView()
 
         timetableView.curWeek(sharedViewModel!!.curWeek)
-            .curTerm("term")
+            .curTerm("term") //TODO 修改学期
             .callback { _: View?, scheduleList: List<Schedule>? ->
                 ScheduleProxy().display(scheduleList)
             }
@@ -68,6 +67,7 @@ class ScheduleFragment : BaseFragment() {
                     .show()
             }
             .callback { curWeek: Int ->
+                // 更改标题栏为周数
                 activity!!.toolbar.title = "第${curWeek}周"
             }
             .showView()
@@ -78,6 +78,7 @@ class ScheduleFragment : BaseFragment() {
         fun onWeekItemClicked(week: Int) {
             timetableView.onDateBuildListener().onUpdateDate(sharedViewModel!!.curWeek, week)
             timetableView.changeWeekOnly(week)
+            mScheduleViewModel.cWeek = week
         }
 
         fun onWeekLeftClicked() {
@@ -107,12 +108,15 @@ class ScheduleFragment : BaseFragment() {
             builder.create().show()
         }
 
-        fun display(beans: List<Schedule>?) {
-            var str = ""
-            for (bean in beans!!) {
-                str += bean.name + "," + bean.weekList.toString() + "," + bean.start + "," + bean.step + "\n"
+        fun display(scheduleList: List<Schedule>?) {
+            if (scheduleList.isNullOrEmpty()) return
+
+            val list: MutableList<Schedule> = emptyList<Schedule>().toMutableList()
+            for (schedule in scheduleList) {
+                if (schedule.weekList.contains(mScheduleViewModel.cWeek)) {
+                    list.add(schedule)
+                }
             }
-            Toast.makeText(context, str, Toast.LENGTH_SHORT).show()
         }
 
         fun hideWeekView() {

@@ -9,10 +9,13 @@ import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 
 class App : Application(), ViewModelStoreOwner {
+
     private var mAppViewModelStore: ViewModelStore? = null
     private var mFactory: ViewModelProvider.Factory? = null
+
     override fun onCreate() {
         super.onCreate()
+        instance = this
         mAppViewModelStore = ViewModelStore()
 
         // TODO 夜间模式
@@ -45,5 +48,10 @@ class App : Application(), ViewModelStoreOwner {
                 "Your activity/fragment is not yet attached to "
                         + "Application. You can't request ViewModel before onCreate call."
             )
+    }
+
+    companion object {
+        lateinit var instance: Application
+            private set
     }
 }

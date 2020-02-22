@@ -31,7 +31,6 @@ class Preference<T>(
         }.apply()
     }
 
-
     private fun getSharedPreferences(name: String, default: T): T = with(prefs) {
         val res: Any = when (default) {
             is Long -> getLong(name, default)

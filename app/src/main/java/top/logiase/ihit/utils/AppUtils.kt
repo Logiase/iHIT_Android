@@ -1,6 +1,8 @@
-package top.logiase.architecture.utils
+package top.logiase.ihit.utils
 
 import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
 
 object AppUtils {
 
@@ -47,6 +49,7 @@ object AppUtils {
      * @param context
      * @return 当前应用的版本名称
      */
+    @Suppress("DEPRECATION")
     @Synchronized
     fun getVersionCode(context: Context): Int {
         try {

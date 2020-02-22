@@ -1,3 +1,2 @@
-include ':architecture'
 include ':app'
 rootProject.name='IHIT'
